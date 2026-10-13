@@ -1,0 +1,52 @@
+name: River Event Task Checks
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "**"
+
+jobs:
+  validate-task:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check required task files
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in instruction.md task.toml environment/Dockerfile tests/Dockerfile tests/test.sh tests/test_task.py solution/solve.sh solution/solve_task.py; do
+            test -f "$path" || { echo "Missing required file: $path"; exit 1; }
+          done
+          if find . -maxdepth 1 -type d \( -name authoring -o -name local_results -o -name output \) | grep -q .; then
+            echo "Unexpected task-root folder detected."; exit 1
+          fi
+
+      - name: Build task environment image
+        run: docker build -t river-event-task:ci environment
+
+      - name: Run solution and verifier tests in container
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace:ro" \
+            --entrypoint /bin/bash river-event-task:ci -lc '
+              set -euo pipefail
+              python -m pip install --no-cache-dir pytest==8.3.4
+              mkdir -p /root/results /root/data /tests/data /logs/verifier
+              cp /workspace/solution/solve_task.py /root/solution.py
+              cp /workspace/solution/solve_task.py /root/solve_task.py
+              cp /workspace/solution/solve.sh /root/solve.sh
+              chmod +x /root/solve.sh
+              cp /workspace/environment/data/river_event_observations.csv /root/data/river_event_observations.csv
+              cp /workspace/tests/test_task.py /tests/test_task.py
+              cp /workspace/tests/data/*.csv /tests/data/
+              /root/solve.sh
+              pytest -q /tests/test_task.py
+              test -s /root/results/summary.json
+              echo "Local task solution and verifier tests passed in CI."
+            '

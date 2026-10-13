@@ -1,0 +1,9 @@
+event_id,classification
+EV-08,local_input
+EV-26,indeterminate
+EV-41,runoff_pulse
+EV-73,sensor_artifact
+HX-102,runoff_pulse
+HX-307,local_input
+HX-515,indeterminate
+HX-900,sensor_artifact

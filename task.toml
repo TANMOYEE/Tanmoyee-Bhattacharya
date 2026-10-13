@@ -1,0 +1,17 @@
+schema_version = "1.4"
+artifacts = ["/root/solution.py", "/root/results/summary.json"]
+
+[task]
+name = "terminal-bench-science/river-event-travel-time-diagnosis"
+description = "Diagnose river turbidity events using reach travel time, upstream/downstream observations, conductivity, flow, and sensor quality."
+authors = [{ name = "Tanmoyee Bhattacharya", email = "tanmoyee.b@turing.com" }]
+
+[metadata]
+domain = "earth-sciences"
+field = "environmental-sciences"
+subfield = "river-water-quality"
+tags = ["river", "turbidity", "travel-time", "sensor-quality", "hydrology"]
+expert_time_estimate_hours = 1.0
+
+[agent]
+timeout_sec = 600
