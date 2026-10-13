@@ -39,7 +39,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo mkdir -p /root/data /root/results data
+          sudo mkdir -p /root/data /root/results
+          mkdir -p data
           sudo cp river_event_observations.csv /root/data/river_event_observations.csv
           cp original_river_event_observations.csv data/original_river_event_observations.csv
           cp reference_river_event_observations.csv data/reference_river_event_observations.csv
