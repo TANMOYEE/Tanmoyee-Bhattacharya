@@ -10,15 +10,45 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Check task files
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependency
+        run: python -m pip install --upgrade pip pytest==8.3.4
+
+      - name: Check required files in repository root
         shell: bash
         run: |
-          set -e
-          echo "Checking for river event task files"
-          find . -name task.toml -type f
-          test -f instruction.md -o -f terminal-bench-science/river-event-travel-time-diagnosis/instruction.md
-          echo "Basic task file check completed"
+          set -euo pipefail
+          for path in instruction.md task.toml solve_task.py solve.sh test_task.py test.sh river_event_observations.csv original_river_event_observations.csv reference_river_event_observations.csv adjudicated_labels.csv; do
+            if [[ ! -f "$path" ]]; then
+              echo "Missing required root-level file: $path"
+              exit 1
+            fi
+          done
+          echo "All expected root-level task files are present."
+
+      - name: Prepare paths expected by the task tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo mkdir -p /root/data /root/results data
+          sudo cp river_event_observations.csv /root/data/river_event_observations.csv
+          cp original_river_event_observations.csv data/original_river_event_observations.csv
+          cp reference_river_event_observations.csv data/reference_river_event_observations.csv
+          cp adjudicated_labels.csv data/adjudicated_labels.csv
+
+      - name: Run task solution
+        shell: bash
+        run: sudo bash ./solve.sh
+
+      - name: Run verifier tests
+        shell: bash
+        run: sudo -E "$(which python)" -m pytest -q ./test_task.py
